@@ -1,7 +1,6 @@
 .DS_Store
-*.aux
-*.log
-*.out
-*.pdf
-*.synctex.gz
-*.toc
+SKYWARN_Systems_Reference.aux
+SKYWARN_Systems_Reference.log
+SKYWARN_Systems_Reference.out
+SKYWARN_Systems_Reference.synctex.gz
+SKYWARN_Systems_Reference.toc
