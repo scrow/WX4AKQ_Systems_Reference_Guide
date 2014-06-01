@@ -2,12 +2,13 @@
 
 \title             {SKYWARN Systems Reference}
 \author            {Maintained by Steve Crow KG4PEQ\\Amateur Radio Coordinator}
-\date              {30-Apr-2014}
-\newcommand\docver {Version 2014.4}
+\date              {01-Jun-2014}
+\newcommand\docver {Version 2014.5}
 
 \usepackage{skywarnbook}
 \usepackage{skywarnbook}
 \usepackage{minted}
+\usemintedstyle{emacs}
 
 \skywarnFormat{printing}
 \disableAutoNumbering
@@ -195,6 +196,8 @@ Here's a description of each column in the Risk Tables and an explanation of whe
 The Risk Tables also include two free-form \textbf{\emph{Discussion}} fields which can include written communication for Net Control Operators and Responders.  Net Control Operators should read the Discussion text when it is present, as it will contain information on activation timeframes and the specifics of the severe weather threat.
 
 Activation Risk and the Discussion fields are used in the generation of the \emph{SKYWARN Activation Notification} product distributed through our EMWIN notification system.
+
+As of RMS 3.8.3, the far right column of the Risk Tables editor contains a checkbox for each area.  Selecting a checkbox adds EMWIN zone coding to target the selected areas with a notification.  Areas without a check will not be sent a notification when the product is submitted.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1063,27 +1066,27 @@ When rejecting a registration request, a reason must be provided.  This reason w
 
 \subsection{Changing E-mail Address}
 
-At this time there is no web interface for changing the e-mail address associated with a Situation Awareness Dashboard user.  This change requires direct manipulation of two MySQL tables on the server.  Example commands are provided below:
+At this time there is no web interface for changing the e-mail address associated with a Situation Awareness Dashboard user.  This change requires direct manipulation of two MySQL tables on the server.  Example commands are provided below.  For more information on accessing MySQL, including details on some graphical user interface (GUI) options to make this process much easier, see the \nameref{database-server} section starting on page \pageref{database-server}.
 
 Connect to the MySQL server:
 
-\begin{minted}{bash}
+\begin{minted}[linenos=true]{text}
 mysql --host=fujita.wx4akq.org --user=wx4akq --password
 \end{minted}
 
 Select the correct database and query for existing accounts matching the new e-mail address:
 
-\begin{minted}{mysql}
+\begin{minted}[linenos=true]{mysql}
 USE wx4akq;
 SELECT * FROM sitUsers WHERE email='newaddress@host.com';
 \end{minted}
 
 If that query returns 0 rows, update both the \verb|sitUsers| and \verb|alertSubs| tables with the new e-mail address:
 
-\begin{minted}{mysql}
-UPDATE sitUsers SET email='newaddress@host.com' \
+\begin{minted}[linenos=true]{mysql}
+UPDATE sitUsers SET email='newaddress@host.com'
   WHERE email='oldaddress@host.com';
-UPDATE alertSubs SET emailAddr='newaddress@host.com' \
+UPDATE alertSubs SET emailAddr='newaddress@host.com'
   WHERE emailAddr='oldaddress@host.com';
 \end{minted}   
 
@@ -1096,7 +1099,7 @@ A more elegant, web based mechanism for accomplishing this type of change will b
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth,keepaspectratio=true]{img/sequel-pro}
-  \caption{In addition to conventional console access to MySQL, a number of graphical user interfaces (GUI's) are available for easier access and manipulation of MySQL databases and tables.  Shown here: \href{http://www.sequelpro.com/}{Sequel Pro} for Mac OS.\label{fig:sequel-pro}}
+  \caption{In addition to conventional console access to MySQL, a number of graphical user interfaces (GUI's) are available for easier access and manipulation of MySQL databases and tables.  Shown here: \href{http://www.sequelpro.com/}{Sequel Pro} for Mac OS.  For more information MySQL GUI's, see \nameref{database-server} on page \pageref{database-server}.\label{fig:sequel-pro}}
 \end{figure}
 
 \subsection{Changing Access Class}
@@ -1105,13 +1108,13 @@ Changing the user's access class requires direct manipulation of the \verb|sitUs
 
 Connect to the MySQL server:
 
-\begin{minted}{bash}
+\begin{minted}[linenos=true]{text}
 mysql --host=fujita.wx4akq.org --user=wx4akq --password
 \end{minted}
 
 Select the correct database and update the table with the new access class:
 
-\begin{minted}{mysql}
+\begin{minted}[linenos=true]{mysql}
 USE wx4akq;
 UPDATE sitUsers SET acctType='newclass' WHERE email='user@domain.com';
 \end{minted}
@@ -1139,6 +1142,785 @@ The use of direct manipulation of the MySQL databases for purposes of account co
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\chapter{Team Network Share}\label{team-network-share}
+
+All SKYWARN team members with a valid Ops Portal login have access to a network file share which operates based on the standard WebDAV protocol.  Portions of the Team Network Share are publicly available in the form of our online file library.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Accessing the Share}
+
+The contents of the Team Network Share can be viewed through any web browser.  No special software is required for viewing and downloading files.
+
+Computers, tablets, and smart phones can read and write from the network share either via built-in network access functions or downloaded third-party applications.
+
+The Team Network Share is located at \texttt{http://files.wx4akq.org/webdav}.
+
+\orangebox{Note}{The \texttt{http://files.wx4akq.org/webdav} URL is the address to supply to your WebDAV client software.  If you simply wish to browse the Team Network Share from your web browser, you should instead go to \href{http://go.wx4akq.org/share}{http://go.wx4akq.org/share}.\\\\Either way, you will log in with your Ops Portal user name and password.  You can use the Passport tool to perform a reset if you do not know your login credentials.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Authentication}
+
+The Team Network Share utilizes the standard Apache \texttt{.htpasswd} and \texttt{.htgroups} files located in the \texttt{/var/www/auth/} folder.  The content of these files is controlled by the normal Ops Portal user provisioning process.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Password Restrictions}
+
+Standard Apache \texttt{.htaccess} files can be used to restrict access to files or folders on the share.
+
+Here is a sample \texttt{.htaccess} file to restrict access based on the following rules:
+
+\begin{itemize}
+\item The user must be logged in to get to the folder (not publicly accessible)
+\item The user must be a member of the \texttt{leadership} group to access the \texttt{pwlist*} files.
+\item The user \texttt{sysop} is the only one who can access the \texttt{pwlist-server.txt} file.
+\end{itemize}
+
+\begin{minted}[linenos=true]{apacheconf}
+AuthName "WX4AKQ Team Network Share"
+AuthType Basic
+
+Options +Indexes
+require valid-user
+
+<Files pwlist*>
+	require group leadership
+</Files>
+
+<Files pwlist-server.txt>
+	require user sysop
+</Files>
+\end{minted}
+
+\orangebox{Warning}{File and folder access restrictions do not apply to direct shell or SFTP access.  This means anyone who has the ability to log in to the server as user \texttt{wx4akq} or a superuser will be able to view the files/folders.  Keep this in mind when storing particularly sensitive information.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Cautionary Note on File Paths}
+
+Many documents in publicly-accessible folders are directly linked (``hotlinked'') from the various SKYWARN web sites.  Use extreme care in renaming any public folders or files, or changing the location of any public folders or files, to ensure no documents become inaccessible.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Connecting to the Team File Share}
+
+\subsection{Connecting from Windows}
+
+These instructions are for Windows 7. The process in other Windows versions will be similar.
+
+\begin{itemize}
+\item Click on the Start Menu and then \texttt{My Computer}.
+\item Click \texttt{Map Network Drive}.
+\item Select a drive letter to use.
+\item Enter \texttt{http://files.wx4akq.org/webdav} for the server address.
+\item Check the \texttt{Log in with different credentials} box.
+\item Connect and log in with your Ops Portal credentials.
+\end{itemize}
+
+If you encounter errors during this process you may need to download and run \href{http://files.wx4akq.org/Software/misc/Win7\_WebDAV\_Fix.zip}{this registry patch}\footnote{http://files.wx4akq.org/Software/misc/Win7\_WebDAV\_Fix.zip}. Download and decompress the \texttt{Win7\_WebDAV\_Fix.zip} file, double-click the included \texttt{.reg} file, and reboot before attempting to connect again. This registry fix is for Windows 7 only. Windows XP users may need \href{http://www.microsoft.com/en-us/download/details.aspx?id=15123}{this Windows software update}\footnote{http://www.microsoft.com/en-us/download/details.aspx?id=15123}.
+
+There are additional registry fixes required to allow Microsoft Office to operate over a WebDAV link. Microsoft has \href{http://support.microsoft.com/kb/2123563}{this Knowledge Base article}\footnote{http://support.microsoft.com/kb/2123563} on the subject, and we have a \href{http://files.wx4akq.org/Software/misc/Office\_2010\_Fix.zip}{quick registry fix for Office 2010}\footnote{http://files.wx4akq.org/Software/misc/Office\_2010\_Fix.zip}.
+
+\subsection{Connecting from Mac OS X}
+
+From Finder, press Command+K or select the \texttt{Go} menu and then \texttt{Connect to Server}.  For the server address, enter \texttt{http://files.wx4akq.org/webdav} and click \texttt{Connect}.  Select the option to connect as a registered user and use your Ops Portal credentials to connect.
+
+\subsection{Connecting from iOS}
+
+Recommended iPhone/iPad software is \href{https://itunes.apple.com/us/app/webdav-nav+/id412341302?mt=8}{WebDAV Nav+}\footnote{https://itunes.apple.com/us/app/webdav-nav+/id412341302?mt=8} (\$3.99). Configuration:
+
+\begin{itemize}
+\item \texttt{Name}: SKYWARN WebDAV
+\item \texttt{Server URL}: http://files.wx4akq.org/webdav
+\item \texttt{Username}: kg4peq
+\item \texttt{Password}: (your Ops Portal password)
+\item \texttt{Directory tree fallback}: Off
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \chapter{System Administration}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Content Management}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The 6 major WX4AKQ.org web sites and 1 supporting collection of resource files are maintained on the main SKYWARN cluster, accessible via SSH by logging in as \texttt{wx4akq@fujita.wx4akq.org}.
+
+The files are managed by the Git Source Code Management tool.  
+
+For more information or to learn how to use Git, see \href{http://www.gitscm.com/}{GitSCM.com}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Accessing the Server}
+
+The primary SKYWARN server is called \texttt{fujita} and it can be accessed directly using Secure Shell (SSH).  Use any SSH software to connect to \texttt{wx4akq@fujita.wx4akq.org}.  SSH must be used any time settings must be changed on the server.  Some content can be submitted in Markdown format via the team network share, as described later in this section.  Using the team network share does not require the use of SSH.
+
+For security reasons, all non-essential ports are sealed off by an iptables firewall.  Additionally, direct login to the \texttt{root} account is disabled.  Once logged in as a regular user, it is possible to \texttt{su} and provide the \texttt{root} password to gain administrative privileges.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Git Repo Folders}
+
+Each web site is managed through a Git repository located in the \texttt{\~/git/} folder.
+
+\begin{verbatim}
+ ~/git/www-emwin      # EMWIN web site
+ ~/git/www-ops        # Ops Portal  
+ ~/git/www-passport   # Passport password tool
+ ~/git/www-pub        # Public wx4akq.org site
+ ~/git/www-resources  # Resource folders
+ ~/git/www-sit        # Situation` Awareness Dashboard
+ ~/git/www-training   # Training portal
+\end{verbatim}
+
+\orangebox{Warning}{As with any Git repository, it is extremely important that the files and folders under \texttt{\~\//git/} are \emph{never} modified directly.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Web Server Folders}
+
+The folders on the production web server are maintained via a Git clone.  These files should never be edited directly, with the exception of the \texttt{.htaccess} file in each \texttt{sites/} folder, as well as the \texttt{globals.php} file in \texttt{resources}, both of which are not included in the Git repos (excluded via \texttt{.gitignore}).
+
+These folders represent the current \texttt{master} branch of each repo.  Most of our web sites require the global \texttt{resources/} folder, which is just a symlink to\\\texttt{/var/www/sites/resources/}.
+
+\begin{verbatim}
+/var/www/auth/             # Authentication resources *
+/var/www/sites/emwin/      # EMWIN site
+/var/www/sites/files/      # File library and WebDAV *
+/var/www/sites/ops/        # Ops Portal
+/var/www/sites/passport/   # Passport password tool
+/var/www/sites/pub/        # Main wx4akq.org site
+/var/www/sites/resources/  # Resource folders
+/var/www/sites/sit/        # Situation Dashboard
+/var/www/sites/training/   # Training Portal
+/var/www/sites/utils/      # Utilities folder *
+/var/www/sites/test/       # Test Area (see below)
+/var/www/sites/itweb/      # IT Support Web Site
+
+ * = not maintained via Git
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Test Server}
+
+The test area located under \texttt{/var/www/sites/test/} is designed to provide a live development workspace on the web server for design and testing of updates to the SKYWARN web sites.
+
+Each folder in the test area is another clone of the Git repo for each site, with the exception of the \texttt{auth/} folder, which is a symbolic link back to the main\\\texttt{/var/www/sites/auth/} folder.
+
+This structure permits the use of a common authentication database and credential set across both the test server and the production server.
+
+All edits to any Git-managed SKYWARN web site must be performed in a new Git branch on the test server first, and, once verified for accuracy and performance, can be merged to the `master` branch and rolled to the production server.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The Update Workflow}
+
+These steps assume you are working over a remote login to fujita using SSH, and are working with files in the test area.  For this example, we will look at making updates to the public-facing \texttt{www.wx4akq.org} web site.
+
+\subsection{Create a Test Workspace (Optional)}
+
+If there is not already a test workspace for the web site to be modified, create one and link to the test \texttt{resources/} folder:
+
+\begin{minted}[linenos=true]{text}
+mkdir /var/www/sites/test/pub/
+cd /var/www/sites/test/pub/
+git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub .
+ln -s /var/www/sites/test/resources/ ./resources/
+\end{minted}
+
+\subsection{Create a new Remote Branch}
+
+Changes should never be committed directly to the `master` branch!  Always create a new remote branch for the set of changes you are about to make and be sure to push that branch to the server.
+
+First, check out the master branch and pull from the server:
+
+\begin{minted}[linenos=true]{text}
+git checkout master
+git pull
+\end{minted}
+
+Then create your new remote branch and push it to the server.  Your remote branch should have a meaningful name.
+
+If you are making only minor content edits, use \texttt{changes-} followed by the date in ``yyyymmdd'' format.  For example, \texttt{changes-20140511}:
+
+\begin{minted}[linenos=true]{text}
+git checkout -b changes-20140511
+git push -u origin changes-20140511
+\end{minted}
+
+\subsection{Make the Changes and Commit to Git}
+
+Make your changes, which can be viewed at \texttt{http://test.wx4akq.org/sitename/}:
+
+\begin{minted}[linenos=true]{text}
+nano -w index.php
+nano -w area1.php
+# [..etc..]
+\end{minted}
+
+Add any new or changed files to the commit:
+
+\begin{minted}[linenos=true]{text}
+git add index.php
+git add newfile.php
+# [..etc..]
+\end{minted}
+
+Or, alternatively, \texttt{git commit -a} to commit all changed files.
+
+Perform a check for any uncomitted files:
+
+\begin{minted}[linenos=true]{text}
+git status
+\end{minted}
+
+Commit the changes and add a comment:
+
+\begin{minted}[linenos=true]{text}
+git commit -m 'Added upcoming class information'
+\end{minted}
+
+Finally, push the commit to the repo:
+
+\begin{minted}[linenos=true]{text}
+git push
+\end{minted}
+
+\subsection{Plan A: Merge to Master and Go Live}\label{publish-plan-a}
+
+In almost all cases, the work performed on branches on the test server will need to be merged into \texttt{master} and pushed to the production server.  These steps will be performed in the test server folders:
+
+Do a final check for any uncommitted changes:
+
+\begin{minted}[linenos=true]{text}
+git status
+\end{minted}
+
+Run \texttt{git commit} if there are uncommitted changes.
+
+Do a final push to the repo:
+
+\begin{minted}[linenos=true]{text}
+git push
+\end{minted}
+
+Check out the \texttt{master} branch, then merge in the \texttt{changes-} branch and push the new \texttt{master} up to the repo:
+
+\begin{minted}[linenos=true]{text}
+git checkout master
+git merge changes-20140511
+git push
+\end{minted}
+
+Now pull the new \texttt{master} to the production server:
+
+\begin{minted}[linenos=true]{text}
+cd /var/www/sites/pub/
+git checkout master
+git pull
+\end{minted}
+
+The production server is now up-to-date with the changes introduced in the \texttt{changes-} branch.
+
+\subsection{Plan B: Go Live with the Branch}
+
+In some cases, it may be preferable \emph{not} to merge the new branch into \texttt{master} and instead directly deploy the branch on the production server.
+
+This approach can be beneficial in the case of a large version update to a critical system which may have undetected bugs, necessitating a quick rollback to the previous version.  Once the code is found to be stable, it can then be merged into `master`.
+
+Starting in the test server folder, do a final check for any uncommitted changes:
+
+\begin{minted}[linenos=true]{text}
+git status
+\end{minted}
+
+Run \texttt{git commit} if there are uncommitted changes.
+
+Do a final push to the repo:
+
+\begin{minted}[linenos=true]{text}
+git push
+\end{minted}
+
+Switch to the production server folder and pull from the repo:
+
+\begin{minted}[linenos=true]{text}
+cd /var/www/sites/pub/
+git pull
+\end{minted}
+
+List the remote branches to ensure the desired branch appears:
+
+\begin{minted}[linenos=true]{text}
+git branch -r
+\end{minted}
+
+Check out the branch:
+
+\begin{minted}[linenos=true]{text}
+git checkout changes-20140511
+\end{minted}
+
+If a rollback to the previous version is necessary, this can be performed by simply checking out the current \texttt{master}:
+
+\begin{minted}[linenos=true]{text}
+git checkout master
+\end{minted}
+
+Once the code is determined to be stable and a merge to \texttt{master} is desired, see the steps for \nameref{publish-plan-a} on page \pageref{publish-plan-a} to merge the branch to \texttt{master}, push it to the git repo, and roll it out to the production server.
+
+\subsection{Branch Deletion Policy}
+
+As a matter of policy, all branches should remain in the git repository.  Do not remove any branch, even once it has been merged into \texttt{master}. In the event a branch was erroneously created and needs to be removed, the following commands will remove it:
+
+\begin{minted}[linenos=true]{text}
+git push origin :branchname
+git push origin :refs/origin/branchname
+\end{minted}
+
+\subsection{Resolving Merge Conflicts}
+
+See \href{http://bit.ly/1me7wTh}{this page}\footnote{http://bit.ly/1me7wTh} for assistance resolving conflicts with merges.
+
+\subsection{Cloning a Project Locally}
+
+With the \texttt{~/.ssh/id\_wx4akq} key (from \texttt{fujita}) added to your local SSH installation using \texttt{ssh-add id\_wx4akq} you can create a local clone of the repository:
+
+\begin{minted}[linenos=true]{text}
+# Create the project folder and do the clone
+mkdir ~/projects
+git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub ~/projects/pub
+
+# Get and link the resources folder
+git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-resources ~/projects/resources
+ln -s ~/projects/pub/resources ~/projects/resources
+\end{minted}
+
+\subsection{Creating a New Site \& Repo from Scratch}
+
+To create a new web site project from scratch:
+
+Create the repo folder and initialize it:
+
+\begin{minted}[linenos=true]{text}
+mkdir ~/git/newsite
+cd ~/git/newsite
+git --bare init
+\end{minted}
+
+Clone the empty repo to the test server:
+
+\begin{minted}[linenos=true]{text}
+git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/newsite /var/www/sites/test/newsite/
+\end{minted}
+
+(A warning about cloning an empty repository is normal.)
+
+Link to resources if needed:
+
+\begin{minted}[linenos=true]{text}
+ln -s /var/www/sites/test/resources /var/www/sites/test/newsite/resources
+\end{minted}
+
+The site is browsable at \texttt{http://test.wx4akq.org/newsite/}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Page Template}
+
+The following page template should be used for all pages to incorporate our standard style on public and internal sites.
+\pagebreak
+\begin{minted}[linenos=true]{php}
+<?php include("resources/includes.php");?>
+<HEAD>
+ <LINK REL="stylesheet" TYPE="text/css" HREF="resources/styles.css" />
+ <TITLE><!-- page title here --></TITLE>
+</HEAD>
+<BODY><?php buildpagetop();?>
+<!-- DOCUMENT BODY HERE -->
+
+<!-- END DOCUMENT BODY --->
+<?php buildpagefooter();?></TD></TR></TABLE>
+</BODY>
+</HTML>
+\end{minted}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{PHP Markdown Support}
+
+The \texttt{resources} library includes \href{http://michelf.ca/projects/php-markdown/}{Michel Fortin's PHP Markdown}\footnote{http://michelf.ca/projects/php-markdown/} to include Markdown code in the SKYWARN web sites.
+
+With \texttt{resources/includes.php} included in a PHP file, the Michelf PHP Markdown library is automatically initialized.  If you are not including our \texttt{includes.php} file, the following code is necessary to initialize the Markdown functions:
+
+\begin{minted}[linenos=true]{php}
+<?php
+# Install PSR-0-compatible class autoloader
+spl_autoload_register(function($class){
+	require preg_replace('{\\\\|_(?!.*\\\\)}', \
+	DIRECTORY_SEPARATOR, ltrim($class, '\\')).'.php';
+});
+# Get Markdown class
+use Michelf\Markdown;
+?>
+\end{minted}
+
+With our \texttt{includes.php} included in a PHP file, a number of custom Markdown-related functions are available.  See the \texttt{includes.php} file for more information.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Markdown Bulletins on Ops Portal and the Public Front Pages}\label{markdown-bulletins}
+
+Code included in the front pages of Ops Portal and the public web site makes it very easy for anyone with minimal technical knowledge to post short bulletins to our web pages using the simple Markdown format.
+
+This section discusses where to place those files.
+
+\subsection{Markdown Style Guide}
+
+Basic \href{http://daringfireball.net/projects/markdown/syntax}{Markdown syntax}\footnote{http://daringfireball.net/projects/markdown/syntax} is supported.  All headings should be at level 2 (\texttt{\#\#}) or deeper.  Headings generated at level 1 (\texttt{\#}) will not display correctly.
+
+\subsection{Posting Markdown to the Server}
+
+There are two methods for posting Markdown bulletins on Ops Portal and the public web site.  You may either use the built-in editing tools available via Ops Portal, or directly upload the files using the WebDAV network share.
+
+The built-in editing tools, under ``Area Manager Tools'' on Ops Portal, provide a web-based interface for creating, viewing, and deleting bulletins on the Ops Portal and public web sites.
+
+\orangebox{Quick Tip}{The built-in editing tools are the preferred method for working with bulletins on the Ops Portal and public web sites and require the least amount of technical knowledge.}
+
+When using the WebDAV network share to place files on the server, the Markdown files go in one of the two subfolders under \texttt{/www\_markdown/ops} or \texttt{/www\_markdown/pub} folder, either \texttt{routine} for routine bulletins or \texttt{urgent} for high priority bulletins.  The full path for an urgent bulletin for Ops Portal would be \texttt{/www\_markdown/ops/urgent}.  File names do not matter, as long as the file ends with the \texttt{.md} extension (in lowercase).  The server will sort the files in reverse order by modification time, newest files first, when displaying them on the site.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth,keepaspectratio=true]{img/urgent-bulletin}
+  \caption{Urgent bulletin displayed on the public web site.\label{fig:urgent-bulletin}}
+\end{figure}
+
+Bulletins on Ops Portal and the public web site may be classified as either ``routine'' or ``urgent.''  Urgent bulletins, such as the one shown in Figure \ref{fig:urgent-bulletin}, receive special formatting to make them stand out.  Urgent bulletins also appear before routine bulletins on both sites.
+
+When creating bulletins, the classification -- urgent vs. routine -- is determined solely by which folder the bulletin is placed in.  The priority can be changed by moving the file from the \texttt{urgent/} folder to the \texttt{routine/} folder, or vice-versa.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Markdown Content on Area Pages}
+
+The Area Information Pages on the public web site and within the \nameref{nco-dashboard} contain links to three specific Markdown files and one Markdown news bulletin folder, all of which are specific to each area.
+
+These files must be submitted via WebDAV using the team network share.  There is no web interface for editing these files at this time.
+
+Each area has its own folder on the network share.  For example, Area 1 files are stored under \texttt{/www\_markdown/area\_pages/area1}.
+
+Three specialized files can be stored here and must named as follows:
+
+\begin{itemize}
+\item \texttt{area1-info.md}: This file stores long-term, fairly static information about the area, such as any special notes on repeater coverage, subnet boundaries, net sponsors, etc.  This file, if it exists, is inserted below the ``Repeater Information'' section.
+\item \texttt{area1-pub.md}: This file contains any information which might be of interest to the general public but which may be redundant to our team members.  This file is displayed when the Area Information page is viewed from the public web site but is suppressed when viewed from within the NCO Dashboard.
+\item \texttt{area1-private.md}:  This file contains special instructions and other information specifically for our Net Control Operators.  It is not displayed when the Area Information page is viewed from the public web site and is only available when accessed from within the NCO Dashboard.
+\end{itemize}
+
+The style guidelines are the same as the public site and Ops Portal bulletins:  all headings must be level 2 (\texttt{\#\#}) or lower;  level 1 (\texttt{\#}) headings will not display correctly.
+
+Each area also has a \texttt{news/} folder which operates in a similar manner to the news folders used on the public site and Ops Portal, except there is no provision for ``urgent'' bulletins.  Individual Markdown files placed in an area's \texttt{news/} folder are displayed in reverse order by modification time, with newest files displayed first.  These files are only displayed when viewed from the public web site.  Display is suppressed when viewed from the NCO Dashboard.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Database Server}\label{database-server}
+
+The database server used by the SKYWARN sites is also hosted on Fujita.  It is a \href{http://www.mysql.org}{MySQL}\footnote{http://www.mysql.org/} server listening on port 3306.  For security reasons, the user accounts on the MySQL server are bound to specific IP addresses, and it is generally not possible to directly access the MySQL server directly from outside the SKYWARN server (though port 3306 \emph{is} open in \texttt{iptables} for purposes of database replication).
+
+Direct manipulation of the MySQL databases is possible from the Linux console via remote SSH login.  To directly manipulate the MySQL databases from outside the SKYWARN server, there are two options:
+
+\begin{itemize}
+\item Establish an SSH tunnel between your local machine and the MySQL server;  then run your local MySQL command-line client over the tunnel.
+
+\item Use GUI software capable of establishing the SSH tunnel and MySQL link for you, such as \href{http://www.sequelpro.com/}{Sequel Pro}\footnote{http://www.sequelpro.com/} or \href{http://www.heidisql.com/}{HeidiSQL}\footnote{http://www.heidisql.com/}.
+\end{itemize}
+
+With either method, since an SSH tunnel is used, bound to the loopback interface on \texttt{fujita}, the MySQL server will see the connection as local and will permit login to any user account permitted to connect from the loopback interface.
+
+\subsection{MySQL Basics}
+
+MySQL is one of the most popular database servers in use today.  We use it to store lots of different kinds of data, like our roster, repeater listings, and net logs.  The other pieces of software that drive our web server read and write to the MySQL databases to create the dynamic elements of our web site.
+
+In many cases user-friendly web forms and other utilities can provide all the access most of our team members will ever need.  Sometimes, though, it is necessary to perform a more complex data lookup or you might need to directly edit some of the information in our records.
+
+The GUI's discussed here will allow you to \emph{easily} access our existing data and make quick edits and additions where necessary.
+
+It's important to understand a few very basic concepts first.
+
+\begin{enumerate}
+\item While these GUI's present the data in a format that looks very much like a typical spreadsheet (and in some cases you can import and export data from/to spreadsheet applications) these are \emph{not} spreadsheets.  The ``cells'' on the screen do not accept formulas.
+
+\item It is entirely possible to do a considerable amount of damage to our system if you are careless with your edits.
+	\begin{itemize}
+	\item If you aren't sure what a database, table, row, column, or value contains, don't change it.  If you must change it, make a backup of the database first!
+	\end{itemize}
+	
+\item Data in MySQL is organized into six basic components:
+   \begin{itemize}
+	\item \textbf{Database}:  A database contains multiple MySQL tables.
+	\item \textbf{Table}:  A collection of rows and columns used to store data (note: a table is what most people envision when they think about a ``database'').
+	\item \textbf{Column}:  Think of this as a form field, designed to accept a specific data type, such as a number, text string, boolean value (true/false), etc.
+	\item \textbf{Row}:  This is where the data associated with an individual record is stored.
+	\item \textbf{Record}:  A record exists at the intersection of a row and one or more columns.
+	\item \textbf{Values}:  These are what go ``in'' each column within a given row.
+   \end{itemize}
+   
+\item Data in MySQL is manipulated and accessed using queries.  These GUI applications will perform the queries for you so you do not need to know MySQL syntax to make basic edits!
+\end{enumerate}
+
+\subsection{Windows GUI Access with HeidiSQL}
+
+There are a handful of GUI applications for MySQL access on the Windows platform.  For simplicity, this guide will cover the use of \href{http://www.heidisql.com/}{HeidiSQL}\footnote{http://www.heidisql.com/} via a pre-configured, downloadable archive housed in our file library.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth,keepaspectratio=true]{img/heidisql}
+  \caption{HeidiSQL view of the \texttt{wx4akq/logs} table.\label{fig:heidisql}}
+\end{figure}
+
+
+To begin, download the \href{http://files.wx4akq.org/Software/MySQL\_Utilities/Portable\%20HeidiSQL.zip}{HeidiSQL Portable ZIP}\footnote{http://files.wx4akq.org/Software/MySQL\_Utilities/Portable\%20HeidiSQL.zip} file from our file library and decompress the file to a location on your computer.  This is a portable file so it will run directly from a USB drive if you prefer.
+
+Double-click on the \texttt{Connect\_to\_Fujita.bat} file.  This file establishes a secure tunneled connection to our database server using Secure Shell (SSH), via the \href{http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html}{Plink}\footnote{http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html} application.
+
+The first time you run this file on your computer you will be asked whether to add the remote key to your computer.  Doing so will enable you to more quickly connect in the future.
+
+You will need the ``SSH Password'' for \texttt{wx4akq}.
+
+\pagebreak
+Once you have entered the proper credentials, you will see some gibberish followed by a command prompt from the server, like this:
+
+\begin{verbatim}
+Enter your server login credentials to establish the secure tunnel to Fujita.
+Once you enter the password, you may then launch HeidiSQL.
+
+To disconnect, simply close this window.
+
+Using username "wx4akq".
+wx4akq@fujita.wx4akq.org's password:
+Last login: Fri May 30 21:12:17 2014 from 73.177.197.116
+←]0;wx4akq@fujita:~←[?1034h[wx4akq@fujita ~]$
+```
+\end{verbatim}
+
+You may then launch HeidiSQL by double-clicking the \texttt{heidisql.exe} icon.
+
+Select the \texttt{Fujita SQL} profile on the left and then click the \texttt{Open} button.
+
+Enter the user name \texttt{wx4akq} and the MySQL password for \texttt{wx4akq}.
+
+To manipulate data, select the desired database in the left column.  In almost all cases you want the \texttt{wx4akq} database.  Then, select the desired table.  Tables will appear under the database name in the left column.  Finally, click the \texttt{Data} tab at the top to view the data contained in the selected table.  Figure \ref{fig:heidisql} shows a view of the data in the \texttt{wx4akq/logs} table as seen in HeidiSQL.
+
+When you are finished, first exit HeidiSQL, then type \texttt{exit} into the remote session you established with the \texttt{Connect\_to\_Fujita.bat} file, or simply close the window.
+
+\subsection{Mac OS X GUI Access with Sequel Pro}
+
+One of several popular GUI's for MySQL access from Mac OS X is \href{http://www.sequelpro.com/}{Sequel Pro}\footnote{http://www.sequelpro.com/}.  To get started with Sequel Pro, download the \texttt{.dmg} file from the Sequel Pro web site, mount the disk image, and drag the application into your \texttt{Applications} folder.  Then double-click it to launch.
+
+Figure \ref{fig:sequel-pro} shows a screen shot of Sequel Pro accessing our database on page \pageref{fig:sequel-pro}.
+
+Download our \href{http://files.wx4akq.org/Software/MySQL\_Utilities/Sequel\_Pro\_Favorite\_Connection.plist}{Favorite Connection}\footnote{http://files.wx4akq.org/Software/MySQL\_Utilities/Sequel\_Pro\_Favorite\_Connection.plist} file from our file library and save it someplace convenient.  Then click the small gear icon in the lower left corner of the Sequel Pro window and select \texttt{Import}, then choose the file you just downloaded.
+
+You will need the ``SSH password'' and ``MySQL password'' for \texttt{wx4akq}.  Enter those, and then click \texttt{Test Connection}.  If the tests succeed, click \texttt{Save Changes} and then click \texttt{Connect}.  For future connections, you can simply launch Sequel Pro, choose the favorite, and click \texttt{Connect}.
+
+If the database you want is not automatically selected, you can choose it in the upper left corner.  In most cases, you want the \texttt{wx4akq} databsae.  Then select the desired table from the left column.
+
+To manipulate the data in the table, select the table, then click the \texttt{Content} button at the top.
+
+When you are done, simply close Sequel Pro to disconnect.
+
+\subsection{iOS GUI Access with impathic MySQL Client}
+
+MySQL access from iOS is possible with several different client applications, but here we will use the \href{https://itunes.apple.com/us/app/mysql-mobile-database-client/id397060484?mt=8}{impathic MySQL Client}\footnote{https://itunes.apple.com/us/app/mysql-mobile-database-client/id397060484?mt=8} (\$4.99) for access.
+
+Launch the application and create a new connection.  Populate the following fields:
+
+\begin{itemize}
+\item \texttt{Database Host}: fujita.wx4akq.org
+\item \texttt{User Name}: wx4akq
+\item \texttt{Password}: (use the current ``MySQL password'')
+\item \texttt{Database Name}: wx4akq
+\item \texttt{Database Port}: 3306
+\end{itemize}
+
+Then tap on \texttt{Advanced}, toggle \texttt{Enable Compression} on, then tap \texttt{SSH Tunnel}.  Populate the following fields:
+
+\begin{itemize}
+\item \texttt{SSH Host}: fujita.wx4akq.org
+\item \texttt{SSH Port}: 22
+\item \texttt{SSH Username}: wx4akq
+\item \texttt{SSH Password}: (use the current ``SSH password'')
+\end{itemize}
+
+Go back to the \texttt{Settings} screen, back to the \texttt{Create New Connection} screen, and then tap \texttt{Save} to store the settings.
+
+You will be prompted to select a table, and can then view and edit the data within each table.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Repeater Database and Area Maps}
+
+Our repeater database provides the data used to generate frequency listings on the SKYWARN web site as well as our map features, including embedded maps on the SKYWARN web site and the downloadable Keyhole Markup Language (KML) files.
+
+The database is comprised of three MySQL tables stored within the \texttt{wx4akq} database on our server: \texttt{repeaterList}, \texttt{repeatersByArea}, and \texttt{repeaterSites}.  These databases are described in this document.
+
+\subsection{repeaterSites table}
+
+The \texttt{repeaterSites} table maintains information on the physical locations of the repeater sites, and this is the starting point for creation of any new repeater in our system.
+
+There are four fields in the table:
+
+\begin{itemize}
+\item \texttt{comments}: This is a plain-language description of the repeater site for ease of identification.  This information is not embedded in any of our maps or displayed anywhere on our web sites.  It is for your reference only.
+
+\item \texttt{coordType}:  Describes the mechanism by which the site coordinates have been determined.  This can be any of these values:
+	\begin{enumerate}
+	\item \texttt{exact}: Coordinates are representative of the exact location of the repeater site.
+	\item \texttt{approx}: Coordinates are close to the repeater site but aren't exact. This coordinate type is usually utilized when a repeater owner does not want the exact location of the repeater to be known to the general public.
+	\item \texttt{city}: Coordinates represent the approximate geographic center of the town/city in which the repeater is located.  This coordinate type is typically used if a repeater's location cannot be determined.
+	\end{enumerate}
+\item \texttt{lat} and \texttt{lon}: Decimal coordinates representing the repeater's location.
+\end{itemize}
+
+Each row in the \texttt{repeaterSites} table is assigned an auto-increment \texttt{id} field which is referenced by the other tables in the database.
+
+\subsection{repeaterList table}
+
+The \texttt{repeaterList} table contains the functional data about each repeater in the SKYWARN system, as well as any comments to be displayed on the web site and on our maps.  A plain-language \texttt{location} field is included but the maps are generated based on the coordinates of the machine as specified in the \texttt{repeaterSites} table and referenced by the \texttt{siteId} field in the \texttt{repeaterList} table.
+
+The fields in \texttt{repeaterList} are:
+
+\begin{itemize}
+\item \texttt{callSign}:  The repeater's call sign.
+\item \texttt{frequency}:  The frequency in MHz.
+\item \texttt{location}:  Plain-language description of the location of the repeater in print-ready format, generally just the town/city and state, ie., ``Richmond, VA''
+\item \texttt{pl}:  The PL tone in Hz.  \texttt{null} if none.
+\item \texttt{echolink}:  The numeric Echolink node assigned to the repeater.  \texttt{null} if none.
+\item \texttt{irlp}:  The IRLP node assigned to the repeater.  \texttt{null} if none.
+\item \texttt{comments}:  Brief comments about the repeater, if any, which will be displayed on the web site and in our maps.
+\item \texttt{siteId}:  The number of the corresponding \texttt{id} value from the \texttt{repeaterSites} table.
+\end{itemize}
+
+\subsection{repeatersByArea table}
+
+The \texttt{repeatersByArea} table handles the assignment of each repeater to one or more SKYWARN areas and also specifies the role of the repeater.  The three fields in the \texttt{repeatersByArea} table are:
+
+\begin{itemize}
+\item \texttt{areaNum}:  The numeric SKYWARN area number for the repeater assignment.
+\item \texttt{repeaterId}:  The numeric identifier of the repeater, based on the \texttt{id} field in the \texttt{repeaterList} table.
+\item \texttt{repeaterType}: Numeric role code indicating the repeater's role in that area. May be one of the following:
+	\begin{enumerate}
+	\item \texttt{1}: Primary Repeater
+	\item \texttt{2}: Linked Repeater (linked to primary)
+	\item \texttt{3}: Subnet Repeater
+	\item \texttt{4}: Backup Repeater
+	\item \texttt{5}: Auxiliary Repeater
+	\item \texttt{6}: VoIP-Only Repeater (routes in to our Echolink/IRLP nets)
+	\end{enumerate}
+\end{itemize}
+
+One repeater may be assigned to more than one area.  For example, repeater \#6 may be a primary for Area 1 and a backup for Area 2.  In that case, the following MySQL queries would be used:
+
+\begin{minted}[linenos=true]{mysql}
+INSERT INTO repeatersByArea
+	(areaNum, repeaterId, repeaterType)
+	VALUES
+	(1, 6, 1);
+INSERT INTO repeatersByArea
+	(areaNum, repeaterId, repeaterType)
+	VALUES
+	(2, 6, 2);
+\end{minted}
+
+...which assigns \texttt{repeaterType} 2 (Backup Repeater) to Area 2 and \texttt{repeaterType} 1 (Primary Repeater) to Area 1.
+
+\orangebox{Shortcut!}{Rather than manipulate the databases directly with raw MySQL queries as shown here, there are number of graphical user interfaces (GUI's) to make MySQL modifications much easier.  See our section called \nameref{database-server} starting on page \pageref{database-server} for information about accessing the MySQL server via both console and graphical interfaces.}
+
+\subsection{Adding New Repeaters}
+
+The process of adding a new repeater involves three steps:
+
+\begin{enumerate}
+\item Create a new repeater site in \texttt{repeaterSites} \emph{or} obtain the \texttt{id} of an existing site at the same location by querying \texttt{repeaterSites}.
+\item Create a new row in \texttt{repeaterList} with the details of the repeater.
+\item Create a new row in \texttt{repeatersByArea} assigning the repeater to an area and establishing its role.
+\end{enumerate}
+
+This is extremely easy to accomplish using a MySQL GUI.
+
+Here is a sample query sequence for making the changes by hand:
+
+\begin{minted}[linenos=true]{mysql}
+# Create the entry in repeaterSites
+INSERT INTO repeaterSites
+	(comments,coordType,lat,lon)
+	VALUES
+	("AB1CDE Repeater","exact",36.43567,-76.6789);
+
+# Get the `id` value to use as `siteId` in repeaterList.
+# We will assume this returns `22` in this example.
+SELECT LAST_INSERT_ID();
+
+# Create the entry in repeaterList
+INSERT INTO repeaterList
+	(callSign, frequency, location, pl, irlp, siteId)
+	VALUES
+	("AB1CDE", 146.73, "MyTown, VA", 100, 4567, 22);
+
+# Get the `id` to use as `repeaterId` in repeatersByArea.
+# We will assume this returns `31` in this example.
+SELECT LAST_INSERT_ID();
+
+# Create the entries in repeatersByArea
+INSERT INTO repeatersByArea
+	(areaNum, repeaterId, repeaterType)
+	VALUES
+	(2, 31, 1);
+INSERT INTO repeatersByArea
+	(areaNum, repeaterId, repeaterType)
+	VALUES
+	(6, 31, 2);
+\end{minted}
+
+\subsection{Updating the Web Site}
+
+Once all three databases are populated with the repeater data, all internal and external SKYWARN web sites will immediately display the repeater data.
+
+There is no delay in updating the information on the sites.
+
+\subsection{Updating the Maps}
+
+Maps are generated from KML files produced from the information in our databases.  A server-side script automatically regenerates these maps once every 2 hours.
+
+To expedite map updates, manually start KML generation by running the \texttt{mkkml.sh} script in the public web folder:
+
+\begin{minted}[linenos=true]{text}
+/var/www/sites/pub/mkkml.sh
+\end{minted}
+
+Once the script completes, KML files for all areas will be updated.  Online map displays will now reflect the new information.
 
 
 \end{document}
