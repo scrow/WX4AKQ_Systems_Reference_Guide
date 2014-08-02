@@ -463,7 +463,9 @@ For more information, see \nameref{ops-manage-groups} on page \pageref{ops-manag
 
 \section{Permanent Forwards}\label{perm-forwards}
 
-Permanent forwards, such as \texttt{info@wx4akq.org} can be specified in the e-mail server's virtual user table file, \verb|/etc/postfix/virtual|.  Permanent forwards should be listed \emph{below} the \verb|### Ops_Aliases_End| delimiter, otherwise they may be lost the next time the virtual user table is refreshed.
+Permanent forwards, such as \texttt{info@wx4akq.org} can be specified in the e-mail server's virtual user table file, \verb|/etc/postfix/virtual-permanent|.  Placing the forwards directly into the \verb|/etc/postfix/virtual| file works temporarily, but those changes will be lost the next time the virtual forwards table is systematically updated.  When manually adding forwards, the data should be added to \textbf{both} files.
+
+The \href{http://www.postfix.org/virtual.5.html}{Postfix man page}\footnote{http://www.postfix.org/virtual.5.html} provides more detail on the use of the \texttt{virtual} file and specification of virtual addresses.
 
 Running the \verb|postmap /etc/postfix/virtual| command is required after directly editing the virtual user table.
 
