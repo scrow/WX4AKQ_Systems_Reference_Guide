@@ -1511,10 +1511,12 @@ With the \texttt{~/.ssh/id\_wx4akq} key (from \texttt{fujita}) added to your loc
 \begin{minted}[linenos=true]{text}
 # Create the project folder and do the clone
 mkdir ~/projects
-git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub ~/projects/pub
+git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub \
+	~/projects/pub
 
 # Get and link the resources folder
-git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-resources ~/projects/resources
+git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-resources \
+	~/projects/resources
 ln -s ~/projects/pub/resources ~/projects/resources
 \end{minted}
 
