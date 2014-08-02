@@ -2,8 +2,8 @@
 
 \title             {SKYWARN Systems Reference}
 \author            {Maintained by Steve Crow KG4PEQ\\Amateur Radio Coordinator}
-\date              {01-Aug-2014}
-\newcommand\docver {Version 2014.6}
+\date              {01-Sep-2014}
+\newcommand\docver {Version 2014.7}
 
 \usepackage{skywarnbook}
 \usepackage{skywarnbook}
@@ -1560,6 +1560,29 @@ ln -s /var/www/sites/test/resources /var/www/sites/test/newsite/resources
 \end{minted}
 
 The site is browsable at \texttt{http://test.wx4akq.org/newsite/}.
+
+\subsection{Version Tagging}
+
+Final versions of versioned applications ready for release should be tagged with a version stamp immediately prior to being rolled into the \texttt{master} branch.  Versioned applications include Passport, RMS/Ops Portal, EMWIN, the Systems Reference Guide, the Operations Manual, and the Situation Awareness Dashboard.
+
+After all changes are committed and immediately before executing the merge to master, run the following commands:
+
+\begin{minted}[linenos=true]{text}
+git tag -a v999.99 -m `version 999.99'
+git push origin v999.99
+\end{minted}
+
+Substituting, of course, \texttt{v999.99} with the actual release version number.
+
+To retroactively apply missing tags to final commits occurring immediately before a merge, see the \href{http://git-scm.com/book/en/Git-Basics-Tagging#Tagging-Later}{Git Basics Guide on Tagging Later}\footnote{http://git-scm.com/book/en/Git-Basics-Tagging\#Tagging-Later}.
+
+Tags can be used much like branches in generating diffs and checking out code at specific points in time.  Like a branch, they must be pushed to the repo in order to be accessible outside your local clone.
+
+To get a list of available tags, run:
+
+\begin{minted}[linenos=true]{text}
+git tag -l
+\end{minted}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
