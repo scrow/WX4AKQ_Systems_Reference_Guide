@@ -1274,7 +1274,7 @@ For more information or to learn how to use Git, see \href{http://www.gitscm.com
 
 \section{Accessing the Server}
 
-The primary SKYWARN server is called \texttt{fujita} and it can be accessed directly using Secure Shell (SSH).  Use any SSH software to connect to \texttt{wx4akq@fujita.wx4akq.org}.  SSH must be used any time settings must be changed on the server.  Some content can be submitted in Markdown format via the team network share, as described later in this section.  Using the team network share does not require the use of SSH.
+The primary SKYWARN server is called \texttt{fujita} and it can be accessed directly using Secure Shell (SSH).  Use any SSH software to connect to \texttt{wx4akq@fujita.wx4akq.org}.  SSH provides console-level access to the server and, with elevated permissions, access to core server software and settings.  Web site content can also be modified via SSH.  However, some content can be submitted in Markdown format via the team network share, or online editing tools provided within Ops Portal.  Using the team network share or online editing tools do not require the use of SSH.
 
 For security reasons, all non-essential ports are sealed off by an \texttt{iptables} firewall.  Additionally, direct login to the \texttt{root} account is disabled.  Once logged in as a regular user, it is possible to \texttt{su} and provide the \texttt{root} password to gain administrative privileges.
 
