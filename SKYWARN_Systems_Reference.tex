@@ -7,8 +7,29 @@
 
 \usepackage{skywarnbook}
 \usepackage{skywarnbook}
-\usepackage{minted}
-\usemintedstyle{emacs}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -- Configure line listing functions ----------------------------------
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{color}
+\usepackage{listings}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{
+  backgroundcolor=\color{white},
+  basicstyle=\ttfamily,
+  breaklines=true,
+  captionpos=b,
+  commentstyle=\color{mygreen},
+  escapeinside={\%*}{*)},
+  keywordstyle=\color{blue},
+  stringstyle=\color{mymauve},
+  numbers=left,
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \skywarnFormat{printing}
 \disableAutoNumbering
@@ -1082,25 +1103,23 @@ At this time there is no web interface for changing the e-mail address associate
 
 Connect to the MySQL server:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}[language=SQL]
 mysql --host=fujita.wx4akq.org --user=wx4akq --password
-\end{minted}
+\end{listlisting}
 
 Select the correct database and query for existing accounts matching the new e-mail address:
 
-\begin{minted}[linenos=true]{mysql}
+\begin{lstlisting}[language=SQL]
 USE wx4akq;
 SELECT * FROM sitUsers WHERE email='newaddress@host.com';
-\end{minted}
+\end{lstlisting}
 
 If that query returns 0 rows, update both the \verb|sitUsers| and \verb|alertSubs| tables with the new e-mail address:
 
-\begin{minted}[linenos=true]{mysql}
-UPDATE sitUsers SET email='newaddress@host.com'
-  WHERE email='oldaddress@host.com';
-UPDATE alertSubs SET emailAddr='newaddress@host.com'
-  WHERE emailAddr='oldaddress@host.com';
-\end{minted}   
+\begin{lstlisting}[language=SQL]
+UPDATE sitUsers SET email='newaddress@host.com' WHERE email='oldaddress@host.com';
+UPDATE alertSubs SET emailAddr='newaddress@host.com' WHERE emailAddr='oldaddress@host.com';
+\end{lstlisting}
 
 {\bf Note:}  The direct manipulation of the \verb|alertSubs| table may return a result of 0 rows changed.  This indicates the user is not currently subscribed to any EMWIN e-mail alerts.
 
@@ -1120,16 +1139,16 @@ Changing the user's access class requires direct manipulation of the \verb|sitUs
 
 Connect to the MySQL server:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}[language=SQL]
 mysql --host=fujita.wx4akq.org --user=wx4akq --password
-\end{minted}
+\end{lstlisting}
 
 Select the correct database and update the table with the new access class:
 
-\begin{minted}[linenos=true]{mysql}
+\begin{lstlisting}[language=SQL]
 USE wx4akq;
 UPDATE sitUsers SET acctType='newclass' WHERE email='user@domain.com';
-\end{minted}
+\end{lstlisting}
 
 \verb|acctType| may be any of the following:  \verb|spotter|, \verb|neighbor|, \verb|nws|, \verb|ares|, \verb|lem|, \verb|sem|, \verb|public|, or \verb|public-unr| (not yet implemented).  More information can be found in \hyperref[sec:eligibility]{Subscriber Eligibility}.
 
@@ -1190,7 +1209,7 @@ Here is a sample \texttt{.htaccess} file to restrict access based on the followi
 \item The user \texttt{sysop} is the only one who can access the \texttt{pwlist-server.txt} file.
 \end{itemize}
 
-\begin{minted}[linenos=true]{apacheconf}
+\begin{lstlisting}
 AuthName "WX4AKQ Team Network Share"
 AuthType Basic
 
@@ -1204,7 +1223,7 @@ require valid-user
 <Files pwlist-server.txt>
 	require user sysop
 </Files>
-\end{minted}
+\end{lstlisting}
 
 \orangebox{Warning}{File and folder access restrictions do not apply to direct shell or SFTP access.  This means anyone who has the ability to log in to the server as user \texttt{wx4akq} or a superuser will be able to view the files/folders.  Keep this in mind when storing particularly sensitive information.}
 
@@ -1355,12 +1374,12 @@ These steps assume you are working over a remote login to fujita using SSH, and 
 
 If there is not already a test workspace for the web site to be modified, create one and link to the test \texttt{resources/} folder:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 mkdir /var/www/sites/test/pub/
 cd /var/www/sites/test/pub/
 git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub .
 ln -s /var/www/sites/test/resources/ ./resources/
-\end{minted}
+\end{lstlisting}
 
 \subsection{Create a new Remote Branch}
 
@@ -1368,57 +1387,57 @@ Changes should never be committed directly to the `master` branch!  Always creat
 
 First, check out the master branch and pull from the server:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git checkout master
 git pull
-\end{minted}
+\end{lstlisting}
 
 Then create your new remote branch and push it to the server.  Your remote branch should have a meaningful name.
 
 If you are making only minor content edits, use \texttt{changes-} followed by the date in ``yyyymmdd'' format.  For example, \texttt{changes-20140511}:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git checkout -b changes-20140511
 git push -u origin changes-20140511
-\end{minted}
+\end{lstlisting}
 
 \subsection{Make the Changes and Commit to Git}
 
 Make your changes, which can be viewed at \texttt{http://test.wx4akq.org/sitename/}:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 nano -w index.php
 nano -w area1.php
 # [..etc..]
-\end{minted}
+\end{lstlisting}
 
 Add any new or changed files to the commit:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git add index.php
 git add newfile.php
 # [..etc..]
-\end{minted}
+\end{lstlisting}
 
-Or, alternatively, \texttt{git commit -a} to commit all changed files.
+Or, alternatively, \lstinline!git commit -a! to commit all changed files.
 
 Perform a check for any uncomitted files:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git status
-\end{minted}
+\end{lstlisting}
 
 Commit the changes and add a comment:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git commit -m 'Added upcoming class information'
-\end{minted}
+\end{lstlisting}
 
 Finally, push the commit to the repo:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git push
-\end{minted}
+\end{lstlisting}
 
 \subsection{Plan A: Merge to Master and Go Live}\label{publish-plan-a}
 
@@ -1426,33 +1445,33 @@ In almost all cases, the work performed on branches on the test server will need
 
 Do a final check for any uncommitted changes:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git status
-\end{minted}
+\end{lstlisting}
 
-Run \texttt{git commit} if there are uncommitted changes.
+Run \lstinline!git commit! if there are uncommitted changes.
 
 Do a final push to the repo:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git push
-\end{minted}
+\end{lstlisting}
 
 Check out the \texttt{master} branch, then merge in the \texttt{changes-} branch and push the new \texttt{master} up to the repo:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git checkout master
 git merge changes-20140511
 git push
-\end{minted}
+\end{lstlisting}
 
 Now pull the new \texttt{master} to the production server:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 cd /var/www/sites/pub/
 git checkout master
 git pull
-\end{minted}
+\end{lstlisting}
 
 The production server is now up-to-date with the changes introduced in the \texttt{changes-} branch.
 
@@ -1464,42 +1483,42 @@ This approach can be beneficial in the case of a large version update to a criti
 
 Starting in the test server folder, do a final check for any uncommitted changes:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git status
-\end{minted}
+\end{lstlisting}
 
-Run \texttt{git commit} if there are uncommitted changes.
+Run \lstinline!git commit! if there are uncommitted changes.
 
 Do a final push to the repo:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git push
-\end{minted}
+\end{lstlisting}
 
 Switch to the production server folder and pull from the repo:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 cd /var/www/sites/pub/
 git pull
-\end{minted}
+\end{lstlisting}
 
 List the remote branches to ensure the desired branch appears:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git branch -r
-\end{minted}
+\end{lstlisting}
 
 Check out the branch:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git checkout changes-20140511
-\end{minted}
+\end{lstlisting}
 
 If a rollback to the previous version is necessary, this can be performed by simply checking out the current \texttt{master}:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git checkout master
-\end{minted}
+\end{lstlisting}
 
 Once the code is determined to be stable and a merge to \texttt{master} is desired, see the steps for \nameref{publish-plan-a} on page \pageref{publish-plan-a} to merge the branch to \texttt{master}, push it to the git repo, and roll it out to the production server.
 
@@ -1507,10 +1526,10 @@ Once the code is determined to be stable and a merge to \texttt{master} is desir
 
 As a matter of policy, all branches should remain in the git repository.  Do not remove any branch, even once it has been merged into \texttt{master}. In the event a branch was erroneously created and needs to be removed, the following commands will remove it:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git push origin :branchname
 git push origin :refs/origin/branchname
-\end{minted}
+\end{lstlisting}
 
 \subsection{Resolving Merge Conflicts}
 
@@ -1518,19 +1537,17 @@ See \href{http://bit.ly/1me7wTh}{this page}\footnote{http://bit.ly/1me7wTh} for 
 
 \subsection{Cloning a Project Locally}
 
-With the \texttt{~/.ssh/id\_wx4akq} key (from \texttt{fujita}) added to your local SSH installation using \texttt{ssh-add id\_wx4akq} you can create a local clone of the repository:
+With the \texttt{~/.ssh/id\_wx4akq} key (from \texttt{fujita}) added to your local SSH installation using \lstinline!ssh-add id_wx4akq! you can create a local clone of the repository:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 # Create the project folder and do the clone
 mkdir ~/projects
-git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub \
-	~/projects/pub
+git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub ~/projects/pub
 
 # Get and link the resources folder
-git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-resources \
-	~/projects/resources
+git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-resources ~/projects/resources
 ln -s ~/projects/pub/resources ~/projects/resources
-\end{minted}
+\end{lstlisting}
 
 \subsection{Creating a New Site \& Repo from Scratch}
 
@@ -1538,26 +1555,25 @@ To create a new web site project from scratch:
 
 Create the repo folder and initialize it:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 mkdir ~/git/newsite
 cd ~/git/newsite
 git --bare init
-\end{minted}
+\end{lstlisting}
 
 Clone the empty repo to the test server:
 
-\begin{minted}[linenos=true]{text}
-git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/newsite \
-	/var/www/sites/test/newsite/
-\end{minted}
+\begin{lstlisting}
+git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/newsite /var/www/sites/test/newsite/
+\end{lstlisting}
 
 (A warning about cloning an empty repository is normal.)
 
 Link to resources if needed:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 ln -s /var/www/sites/test/resources /var/www/sites/test/newsite/resources
-\end{minted}
+\end{lstlisting}
 
 The site is browsable at \texttt{http://test.wx4akq.org/newsite/}.
 
@@ -1567,10 +1583,10 @@ Final versions of versioned applications ready for release should be tagged with
 
 After all changes are committed and immediately before executing the merge to master, run the following commands:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git tag -a v999.99 -m `version 999.99'
 git push origin v999.99
-\end{minted}
+\end{lstlisting}
 
 Substituting, of course, \texttt{v999.99} with the actual release version number.
 
@@ -1580,9 +1596,9 @@ Tags can be used much like branches in generating diffs and checking out code at
 
 To get a list of available tags, run:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 git tag -l
-\end{minted}
+\end{lstlisting}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1590,7 +1606,8 @@ git tag -l
 
 The following page template should be used for all pages to incorporate our standard style on public and internal sites.
 \pagebreak
-\begin{minted}[linenos=true]{php}
+
+\begin{lstlisting}[language=PHP]
 <?php include("resources/includes.php");?>
 <HEAD>
  <LINK REL="stylesheet" TYPE="text/css" HREF="resources/styles.css" />
@@ -1603,7 +1620,7 @@ The following page template should be used for all pages to incorporate our stan
 <?php buildpagefooter();?></TD></TR></TABLE>
 </BODY>
 </HTML>
-\end{minted}
+\end{lstlisting}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1613,17 +1630,16 @@ The \texttt{resources} library includes \href{http://michelf.ca/projects/php-mar
 
 With \texttt{resources/includes.php} included in a PHP file, the Michelf PHP Markdown library is automatically initialized.  If you are not including our \texttt{includes.php} file, the following code is necessary to initialize the Markdown functions:
 
-\begin{minted}[linenos=true]{php}
+\begin{lstlisting}[language=PHP]
 <?php
 # Install PSR-0-compatible class autoloader
 spl_autoload_register(function($class){
-	require preg_replace('{\\\\|_(?!.*\\\\)}', \
-	DIRECTORY_SEPARATOR, ltrim($class, '\\')).'.php';
+	require preg_replace('{\\\\|_(?!.*\\\\)}', DIRECTORY_SEPARATOR, ltrim($class, '\\')).'.php';
 });
 # Get Markdown class
 use Michelf\Markdown;
 ?>
-\end{minted}
+\end{lstlisting}
 
 With our \texttt{includes.php} included in a PHP file, a number of custom Markdown-related functions are available.  See the \texttt{includes.php} file for more information.
 
@@ -1759,8 +1775,7 @@ To disconnect, simply close this window.
 Using username "wx4akq".
 wx4akq@fujita.wx4akq.org's password:
 Last login: Fri May 30 21:12:17 2014 from 73.177.197.116
-←]0;wx4akq@fujita:~←[?1034h[wx4akq@fujita ~]$
-```
+←]0;wx4akq@fujita:~←[?1034h[wx4akq@fujita ~]
 \end{verbatim}
 
 You may then launch HeidiSQL by double-clicking the \texttt{heidisql.exe} icon.
@@ -1881,15 +1896,9 @@ The \texttt{repeatersByArea} table handles the assignment of each repeater to on
 
 One repeater may be assigned to more than one area.  For example, repeater \#6 may be a primary for Area 1 and a backup for Area 2.  In that case, the following MySQL queries would be used:
 
-\begin{minted}[linenos=true]{mysql}
-INSERT INTO repeatersByArea
-	(areaNum, repeaterId, repeaterType)
-	VALUES
-	(1, 6, 1);
-INSERT INTO repeatersByArea
-	(areaNum, repeaterId, repeaterType)
-	VALUES
-	(2, 6, 2);
+\begin{lstlisting}[language=SQL]
+INSERT INTO repeatersByArea (areaNum, repeaterId, repeaterType) VALUES (1, 6, 1);
+INSERT INTO repeatersByArea (areaNum, repeaterId, repeaterType) VALUES (2, 6, 2);
 \end{minted}
 
 ...which assigns \texttt{repeaterType} 2 (Backup Repeater) to Area 2 and \texttt{repeaterType} 1 (Primary Repeater) to Area 1.
@@ -1910,37 +1919,25 @@ This is extremely easy to accomplish using a MySQL GUI.
 
 Here is a sample query sequence for making the changes by hand:
 
-\begin{minted}[linenos=true]{mysql}
+\begin{lstlisting}[language=SQL]
 # Create the entry in repeaterSites
-INSERT INTO repeaterSites
-	(comments,coordType,lat,lon)
-	VALUES
-	("AB1CDE Repeater","exact",36.43567,-76.6789);
+INSERT INTO repeaterSites (comments,coordType,lat,lon) VALUES ("AB1CDE Repeater","exact",36.43567,-76.6789);
 
 # Get the `id` value to use as `siteId` in repeaterList.
 # We will assume this returns `22` in this example.
 SELECT LAST_INSERT_ID();
 
 # Create the entry in repeaterList
-INSERT INTO repeaterList
-	(callSign, frequency, location, pl, irlp, siteId)
-	VALUES
-	("AB1CDE", 146.73, "MyTown, VA", 100, 4567, 22);
+INSERT INTO repeaterList (callSign, frequency, location, pl, irlp, siteId) VALUES ("AB1CDE", 146.73, "MyTown, VA", 100, 4567, 22);
 
 # Get the `id` to use as `repeaterId` in repeatersByArea.
 # We will assume this returns `31` in this example.
 SELECT LAST_INSERT_ID();
 
 # Create the entries in repeatersByArea
-INSERT INTO repeatersByArea
-	(areaNum, repeaterId, repeaterType)
-	VALUES
-	(2, 31, 1);
-INSERT INTO repeatersByArea
-	(areaNum, repeaterId, repeaterType)
-	VALUES
-	(6, 31, 2);
-\end{minted}
+INSERT INTO repeatersByArea (areaNum, repeaterId, repeaterType) VALUES (2, 31, 1);
+INSERT INTO repeatersByArea (areaNum, repeaterId, repeaterType) VALUES (6, 31, 2);
+\end{lstlisting}
 
 \subsection{Updating the Web Site}
 
@@ -1954,11 +1951,10 @@ Maps are generated from KML files produced from the information in our databases
 
 To expedite map updates, manually start KML generation by running the \texttt{mkkml.sh} script in the public web folder:
 
-\begin{minted}[linenos=true]{text}
+\begin{lstlisting}
 /var/www/sites/pub/mkkml.sh
-\end{minted}
+\end{lstlisting}
 
 Once the script completes, KML files for all areas will be updated.  Online map displays will now reflect the new information.
-
 
 \end{document}
