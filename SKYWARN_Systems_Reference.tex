@@ -6,7 +6,6 @@
 \newcommand\docver {Version 2014.7}
 
 \usepackage{skywarnbook}
-\usepackage{skywarnbook}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % -- Configure line listing functions ----------------------------------
@@ -1320,9 +1319,9 @@ Each web site is managed through a Git repository located in the \texttt{\~\//gi
  ~/git/www-ops        # Ops Portal  
  ~/git/www-passport   # Passport password tool
  ~/git/www-pub        # Public wx4akq.org site
- ~/git/www-resources  # Resource folders
- ~/git/www-sit        # Situation` Awareness Dashboard
+ ~/git/www-sit        # Situation Awareness Dashboard
  ~/git/www-training   # Training portal
+ ~/git/www-resources  # Resource submodule
 \end{verbatim}
 
 \orangebox{Warning}{As with any Git repository, it is extremely important that the files and folders under \texttt{\~\//git/} are \emph{never} modified directly.}
@@ -1333,7 +1332,7 @@ Each web site is managed through a Git repository located in the \texttt{\~\//gi
 
 The folders on the production web server are maintained via a Git clone.  These files should never be edited directly, with the exception of the \texttt{.htaccess} file in each \texttt{sites/} folder, as well as the \texttt{globals.php} file in \texttt{resources}, both of which are not included in the Git repos (excluded via \texttt{.gitignore}).
 
-These folders represent the current \texttt{master} branch of each repo.  Most of our web sites require the global \texttt{resources/} folder, which is just a symlink to\\\texttt{/var/www/sites/resources/}.
+These folders represent the current \texttt{master} branch of each repo.
 
 \begin{verbatim}
 /var/www/auth/             # Authentication resources *
@@ -1342,7 +1341,6 @@ These folders represent the current \texttt{master} branch of each repo.  Most o
 /var/www/sites/ops/        # Ops Portal
 /var/www/sites/passport/   # Passport password tool
 /var/www/sites/pub/        # Main wx4akq.org site
-/var/www/sites/resources/  # Resource folders
 /var/www/sites/sit/        # Situation Dashboard
 /var/www/sites/training/   # Training Portal
 /var/www/sites/utils/      # Utilities folder *
@@ -1372,29 +1370,45 @@ These steps assume you are working over a remote login to fujita using SSH, and 
 
 \subsection{Create a Test Workspace (Optional)}
 
-If there is not already a test workspace for the web site to be modified, create one and link to the test \texttt{resources/} folder:
+If there is not already a test workspace for the web site to be modified, create one.
+
+Initial workspace creation:
 
 \begin{lstlisting}
 mkdir /var/www/sites/test/pub/
 cd /var/www/sites/test/pub/
 git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub .
-ln -s /var/www/sites/test/resources/ ./resources/
+\end{lstlisting}
+
+Initialize submodules and check out the proper commits:
+
+\begin{lstlisting}
+git submodule init
+git submodule update 
+git submodule foreach git checkout master
+git submodule update --recursive
+\end{lstlisting}
+
+Link the \texttt{globals.php} file:
+
+\begin{lstlisting}
+ln -s /var/www/sites/globals.php resources/globals.php
 \end{lstlisting}
 
 \subsection{Create a new Remote Branch}
 
-Changes should never be committed directly to the `master` branch!  Always create a new remote branch for the set of changes you are about to make and be sure to push that branch to the server.
+Changes should never be committed directly to the \texttt{master} branch!  Always create a new remote branch for the set of changes you are about to make and be sure to push that branch to the server.
 
-First, check out the master branch and pull from the server:
+First, check out the \texttt{master} branch and pull from the server:
 
 \begin{lstlisting}
 git checkout master
 git pull
 \end{lstlisting}
 
-Then create your new remote branch and push it to the server.  Your remote branch should have a meaningful name.
+\orangebox{Rebasing}{If a situation necessitates a change to \texttt{master} while a new development branch already exists, remember to run \texttt{git rebase master} on the development branch to incorporate the changes made to \texttt{master}.  Rebasing can be challenging and manual conflict resolution may be required.}
 
-If you are making only minor content edits, use \texttt{changes-} followed by the date in ``yyyymmdd'' format.  For example, \texttt{changes-20140511}:
+Then create your new remote branch and optionally push it to the server.  Your remote branch should have a meaningful name.
 
 \begin{lstlisting}
 git checkout -b changes-20140511
@@ -1439,6 +1453,8 @@ Finally, push the commit to the repo:
 git push
 \end{lstlisting}
 
+\orangebox{Submodule Commits}{Remember that any changes to a submodule must be pushed to the repo before pushing the parent project and the parent project will require a commit and push for all submodule changes.  \texttt{git status} will indicate whether there are any new commits on submodules.}
+
 \subsection{Plan A: Merge to Master and Go Live}\label{publish-plan-a}
 
 In almost all cases, the work performed on branches on the test server will need to be merged into \texttt{master} and pushed to the production server.  These steps will be performed in the test server folders:
@@ -1471,6 +1487,13 @@ Now pull the new \texttt{master} to the production server:
 cd /var/www/sites/pub/
 git checkout master
 git pull
+\end{lstlisting}
+
+Finally, update submodules and check out the proper commit for each:
+
+\begin{lstlisting}
+git pull --recurse-submodules
+git submodule update --recursive
 \end{lstlisting}
 
 The production server is now up-to-date with the changes introduced in the \texttt{changes-} branch.
@@ -1514,17 +1537,43 @@ Check out the branch:
 git checkout changes-20140511
 \end{lstlisting}
 
+Finally, update submodules and check out the proper commit for each:
+
+\begin{lstlisting}
+git pull --recurse-submodules
+git submodule update --recursive
+\end{lstlisting}
+
 If a rollback to the previous version is necessary, this can be performed by simply checking out the current \texttt{master}:
 
 \begin{lstlisting}
 git checkout master
 \end{lstlisting}
 
+...along with a corresponding modification to the submodules:
+
+Finally, update submodules and check out the proper commit for each:
+
+\begin{lstlisting}
+git submodule update --recursive
+\end{lstlisting}
+
 Once the code is determined to be stable and a merge to \texttt{master} is desired, see the steps for \nameref{publish-plan-a} on page \pageref{publish-plan-a} to merge the branch to \texttt{master}, push it to the git repo, and roll it out to the production server.
+
+\subsection{Remote Branches}
+
+Branches may be local or remote.  Remote branches should be used any time multiple developers will be working with a branch, or if a developer will work with a branch on more than one machine.
 
 \subsection{Branch Deletion Policy}
 
-As a matter of policy, all branches should remain in the git repository.  Do not remove any branch, even once it has been merged into \texttt{master}. In the event a branch was erroneously created and needs to be removed, the following commands will remove it:
+Remote branches should be deleted once they are no longer needed.  The following syntax may be used to delete a local branch:
+
+\begin{lstlisting}
+git checkout master
+git branch -d branchname
+\end{lstlisting}
+
+Then delete the corresponding remote branch:
 
 \begin{lstlisting}
 git push origin :branchname
