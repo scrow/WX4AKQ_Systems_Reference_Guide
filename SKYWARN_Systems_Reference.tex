@@ -183,9 +183,9 @@ Leadership Team members have the ability to view and edit any team member's rost
 
 The SKYWARN Risk Tables presented on the front page of Ops Portal are an easy-to-use display of generalized information from the Wakefield WFO, Storm Prediction Center (SPC), and NOAA Weather Prediction Center (WPC).  The Risk Tables provide at-a-glance views of the risks of flash flooding, tornadoes, severe hail, severe winds, and more.  Figure \ref{fig:ops-risk-tables-sample} shows a sample Risk Tables product.
 
-The Risk Tables product is \emph{not updated in real-time}.  Area Managers or other members of the Leadership Team must periodically update the information and publish it to the site.  The information in the Risk Tables is considered valid for 18 hours before it is expired, but expired data will continue to display on the site indefinitely.
+The Risk Tables product is \emph{not updated in real-time}.  Area Managers or other members of the Leadership Team must periodically update the information and publish it to the site.  The information in the Risk Tables is considered valid for 18 hours before it is expired, but expired data will continue to display on the site indefinitely.  Responders may also update the Risk Tables product.
 
-The Risk Tables are updated through Ops Portal via an \textbf{Edit} link which will appear below the Risk Tables for members of the Leadership Team.  Regular team members, including Net Control Operators, Responders, and most support personnel, cannot edit the Risk Tables.  Figure \ref{fig:ops-risk-tables-editor} shows the Risk Tables Editor.
+The Risk Tables are updated through Ops Portal via an \textbf{Edit} link which will appear below the Risk Tables for members of the Leadership Team.  Regular team members, including Net Control Operators and most support personnel, cannot edit the Risk Tables.  Figure \ref{fig:ops-risk-tables-editor} shows the Risk Tables Editor.
 
 \orangebox{Shortcut}{\underline{Most} SKYWARN team members will only be concerned with the far right column: \emph{Activation Risk}.  Pay close attention to that column, as it indicates the chances of a SKYWARN activation in each area, as well as the current status of SKYWARN (Activation Requested, Activated, Deactivated).\\\\ The rest of the information in the Risk Tables is targeted at our more ``advanced'' team members.}
 
@@ -193,12 +193,6 @@ The Risk Tables are updated through Ops Portal via an \textbf{Edit} link which w
   \centering
   \includegraphics[width=\textwidth,keepaspectratio=true]{img/ops-risk-tables-sample}
   \caption{Sample Risk Tables product.\label{fig:ops-risk-tables-sample}}
-\end{figure}
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\textwidth,keepaspectratio=true]{img/ops-risk-tables-editor}
-  \caption{Leadership Team Risk Tables Editor.\label{fig:ops-risk-tables-editor}}
 \end{figure}
 
 Here's a description of each column in the Risk Tables and an explanation of where the information comes from:
@@ -215,9 +209,7 @@ Here's a description of each column in the Risk Tables and an explanation of whe
 
 The Risk Tables also include two free-form \textbf{\emph{Discussion}} fields which can include written communication for Net Control Operators and Responders.  Net Control Operators should read the Discussion text when it is present, as it will contain information on activation timeframes and the specifics of the severe weather threat.
 
-Activation Risk and the Discussion fields are used in the generation of the \emph{SKYWARN Activation Notification} product distributed through our EMWIN notification system.
-
-As of RMS 3.8.3, the far right column of the Risk Tables editor contains a checkbox for each area.  Selecting a checkbox adds EMWIN zone coding to target the selected areas with a notification.  Areas without a check will not be sent a notification when the product is submitted.
+For information on generating and transmitting Risk Tables and Activation Notifications, see \nameref{ops-risk-tables-editor}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -287,6 +279,8 @@ Leadership Team members have access to a few additional functions within Ops Por
 \item \nameref{ops-manage-groups}
 \item \nameref{ops-delete-user}
 \item \nameref{ops-manage-situation}
+\item \nameref{ops-risk-tables-editor}
+\item \nameref{ops-emwin-composer}
 \end{itemize}
 
 These functions are described in this section.
@@ -357,6 +351,41 @@ If the outgoing team member would like to retain their EMWIN E-mail Weather Aler
 \subsection{Manage Situation Awareness Dashboard Users}\label{ops-manage-situation}
 
 The \textbf{Account Management} area of Ops Portal includes functions for managing subscriptions to the \nameref{sit-dashboard}.  These functions and other related tasks are described in great detail in the Situation Awareness Dashboard \nameref{sit-leadership-functions} section starting on page \pageref{sit-leadership-functions}.
+
+\subsection{Risk Tables Editor}\label{ops-risk-tables-editor}
+
+The Risk Tables Editor allows members of the Leadership Team to update the \nameref{risk-tables-intro} product and generate Activation Notifications.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth,keepaspectratio=true]{img/ops-risk-tables-editor}
+  \caption{Leadership Team Risk Tables Editor.\label{fig:ops-risk-tables-editor}}
+\end{figure}
+
+Activation Risk and the Discussion fields are used in the generation of the \emph{SKYWARN Activation Notification} product distributed through our EMWIN notification system.
+
+The far right column of the Risk Tables editor contains a checkbox for each area.  Selecting a checkbox adds EMWIN zone coding to target the selected areas with a notification.  Areas without a check will not be sent a notification when the product is submitted.  Net Managers may only publish notifications for their own assigned areas, based on permission group memberships.  See \nameref{ops-manage-groups} for more information on permission group assignments.
+
+When used for drill purposes, the checkbox labeled ``Include Drill Messaging'' must be checked and a brief description of the drill or exercise activity must be included in the text box provided.  This will add messaging to reiterate that the resulting Activation Notification is being created in conjunction with a drill and that no actual emergency situation is occurring.  This will also trigger similar verbiage on the public-facing web site as well as Ops Portal.
+
+To avoid update collisions, Risk Tables Editor may only be accessed by one user at a time.  Additional users attempting to access the editor will receive an error stating that the editor is in use by someone else.
+
+More information on the Risk Tables product and the NWS resources used to generate the Risk Tables are explained in the section on \nameref{risk-tables-intro}.
+
+\subsection{EMWIN Composer}\label{ops-emwin-composer}
+
+RMS 4.0 introduces an EMWIN Composer which allows members of the Leadership Team to generate properly formatted messages for publication into our EMWIN Ingest.  Users must select a supported product type, expiration date and time up to fourteen days in the future, targeted SKYWARN Areas, and supply the product text.  The composer will add the appropriate EMWIN headers including both AWIPS and WMO product codes, zone codes, county names, disclaimer verbiage, and footer information.
+
+The EMWIN Composer does not support versioning or reissuance of already-published products.  Users should maintain a copy of the body of any product transmitted through EMWIN which may need to be re-sent at some point in the future.
+
+The EMWIN Composer is equipped with a template for each supported product type to aid in maintaining proper EMWIN structure.
+
+Text is automatically capitalized and wrapped at 72 columns.
+
+Products transmitted through this system will be immediately available to all subscribers including team members and Situation Awareness Dashboard users.
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
