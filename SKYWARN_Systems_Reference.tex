@@ -1341,16 +1341,16 @@ For security reasons, all non-essential ports are sealed off by an \texttt{iptab
 
 \section{Git Repo Folders}
 
-Each web site is managed through a Git repository located in the \texttt{\~\//git/} folder.
+Each web site is managed through a Git repository located in the \texttt{/home/wx4akq/git/} folder.
 
 \begin{verbatim}
- ~/git/www-emwin      # EMWIN web site
- ~/git/www-ops        # Ops Portal  
- ~/git/www-passport   # Passport password tool
- ~/git/www-pub        # Public wx4akq.org site
- ~/git/www-sit        # Situation Awareness Dashboard
- ~/git/www-training   # Training portal
- ~/git/www-resources  # Resource submodule
+ /home/wx4akq/git/www-emwin      # EMWIN web site
+ /home/wx4akq/git/www-ops        # Ops Portal  
+ /home/wx4akq/git/www-passport   # Passport password tool
+ /home/wx4akq/git/www-pub        # Public wx4akq.org site
+ /home/wx4akq/git/www-sit        # Situation Awareness Dashboard
+ /home/wx4akq/git/www-training   # Training portal
+ /home/wx4akq/git/www-resources  # Resource submodule
 \end{verbatim}
 
 \orangebox{Warning}{As with any Git repository, it is extremely important that the files and folders under \texttt{\~\//git/} are \emph{never} modified directly.}
@@ -1385,57 +1385,88 @@ These folders represent the current \texttt{master} branch of each repo.
 
 The test area located under \texttt{/var/www/sites/test/} is designed to provide a live development workspace on the web server for design and testing of updates to the SKYWARN web sites.
 
-Each folder in the test area is another clone of the Git repo for each site, with the exception of the \texttt{auth/} folder, which is a symbolic link back to the main\\\texttt{/var/www/sites/auth/} folder.
+Each folder in the test area is a clone of the Git repo for each site, with the exception of the \texttt{auth/} folder, which is a symbolic link back to the main\\\texttt{/var/www/sites/auth/} folder.
 
 This structure permits the use of a common authentication database and credential set across both the test server and the production server.
 
-All edits to any Git-managed SKYWARN web site must be performed in a new Git branch on the test server first, and, once verified for accuracy and performance, can be merged to the \texttt{master} branch and rolled to the production server.
+All edits to any Git-managed SKYWARN web site must be performed in a new Git branch on the test server first, and, once verified for accuracy and performance, can be merged to the \texttt{master} branch and pushed to the production server.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{The Update Workflow}
+\section{Project Workflow}
 
 These steps assume you are working over a remote login to fujita using SSH, and are working with files in the test area.  For this example, we will look at making updates to the public-facing \texttt{www.wx4akq.org} web site.
 
-\subsection{Create a Test Workspace (Optional)}
+\subsection{Create the Repository}
 
-If there is not already a test workspace for the web site to be modified, create one.
-
-Initial workspace creation:
+To create the origin repository:
 
 \begin{lstlisting}
-mkdir /var/www/sites/test/pub/
-cd /var/www/sites/test/pub/
-git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub .
+git init --bare /home/wx4akq/git/myproject
 \end{lstlisting}
 
-Initialize submodules and check out the proper commits:
+To create the production repository:
 
 \begin{lstlisting}
-git submodule init
-git submodule update 
-git submodule foreach git checkout master
-git submodule update --recursive
+git init --bare /home/wx4akq/git/myproject-prod
 \end{lstlisting}
 
-Link the \texttt{globals.php} file:
+\subsection{Create Test Environment and Initial Commit}
+
+Create the test environment, add the resource submodule, link the global config file, commit, and push to both origin and prod:
 
 \begin{lstlisting}
+git clone /home/wx4akq/git/myproject /var/www/sites/test/myproject
+cd /var/www/sites/test/myproject
+git submodule add wx4akq@fujita.wx4akq.org:git/www-resources resources
+git submodule update --init --recursive
+git add .gitmodules resources
+git commit -m 'initial commit'
+git push origin master
+
+git remote add prod /home/wx4akq/git/myproject-prod
+git push prod master
+
 ln -s /var/www/sites/globals.php resources/globals.php
 \end{lstlisting}
 
-\subsection{Create a new Remote Branch}
+\subsection{Create Production Server Folders}
 
-Changes should never be committed directly to the \texttt{master} branch!  Always create a new remote branch for the set of changes you are about to make and be sure to push that branch to the server.
+\begin{lstlisting}
+git clone /home/wx4akq/git/myproject-prod /var/www/sites/myproject
+cd /var/www/sites/myproject
+git checkout master
+git submodule update --init --recursive
+\end{lstlisting}
 
-First, check out the \texttt{master} branch and pull from the server:
+\subsection{Enable Automatic Production Deployment}
+
+To enable automatic production deployment, create a \texttt{/home/wx4akq/git/myproject-prod/hooks/post-receive} file with the following contents:
+
+\begin{lstlisting}
+#!/bin/sh
+WORK_DIR=/var/www/sites/test/myproject
+unset GIT_DIR
+echo "Checking out"
+(cd $WORK_DIR && git pull -f)
+(cd $WORK_DIR && git checkout -f)
+echo "Submodule update"
+(cd $WORK_DIR && git submodule update --init --recursive)
+(cd $WORK_DIR && git submodule update --recursive)
+\end{lstlisting}
+
+Then \texttt{chmod u+x /home/wx4akq/git/myproject-prod/hooks/post-receive} to enable execution.
+
+\subsection{Branching and Pushing Changes}
+
+In most cases, changes should not be committed directly to the \texttt{master} branch.  Instead, create a new remote branch for the set of changes you are about to make and be sure to push that branch to the server.
+
+First, from the test server, check out the \texttt{master} branch and pull from the server:
 
 \begin{lstlisting}
 git checkout master
 git pull
 \end{lstlisting}
-
-\orangebox{Rebasing}{If a situation necessitates a change to \texttt{master} while a new development branch already exists, remember to run \texttt{git rebase master} on the development branch to incorporate the changes made to \texttt{master}.  Rebasing can be challenging and manual conflict resolution may be required.}
 
 Then create your new remote branch and optionally push it to the server.  Your remote branch should have a meaningful name.
 
@@ -1443,8 +1474,6 @@ Then create your new remote branch and optionally push it to the server.  Your r
 git checkout -b changes-20140511
 git push -u origin changes-20140511
 \end{lstlisting}
-
-\subsection{Make the Changes and Commit to Git}
 
 Make your changes, which can be viewed at \texttt{http://test.wx4akq.org/sitename/}:
 
@@ -1484,110 +1513,47 @@ git push
 
 \orangebox{Submodule Commits}{Remember that any changes to a submodule must be pushed to the repo before pushing the parent project and the parent project will require a commit and push for all submodule changes.  \texttt{git status} will indicate whether there are any new commits on submodules.}
 
-\subsection{Plan A: Merge to Master and Go Live}\label{publish-plan-a}
+\orangebox{Rebasing}{If a situation necessitates a change to \texttt{master} while a new development branch already exists, remember to run \texttt{git rebase master} on the development branch to incorporate the changes made to \texttt{master}.  Rebasing can be challenging and manual conflict resolution may be required.}
 
-In almost all cases, the work performed on branches on the test server will need to be merged into \texttt{master} and pushed to the production server.  These steps will be performed in the test server folders:
+\subsection{Deploying to Production}
 
-Do a final check for any uncommitted changes:
+The production servers by default track the \texttt{master} branch.  Deploying code to production is as simple as pushing \texttt{master} to the \texttt{prod} remote (after all changes have been merged to \texttt{master}, of course).
 
 \begin{lstlisting}
-git status
+git push prod master
 \end{lstlisting}
 
-Run \lstinline!git commit! if there are uncommitted changes.
+The \texttt{post-receive} hook will automatically update submodules.
 
-Do a final push to the repo:
+\subsection{Deploy a Different Branch on Production}
+
+If a branch other than \texttt{master} is desired on production, first push that branch to the \texttt{prod} remote, then manually check out the desired branch on the production server.  Finally, update the submodules:
 
 \begin{lstlisting}
-git push
+cd /var/www/sites/test/myproject
+
+git checkout -b testbranch
+nano -w newfile.php
+# ..other changes here..
+git commit -am 'add newfile.php'
+git push origin testbranch
+
+cd /var/www/sites/myproject
+git pull
+git checkout testbranch
+git submodule update
 \end{lstlisting}
 
-Check out the \texttt{master} branch, then merge in the \texttt{changes-} branch and push the new \texttt{master} up to the repo:
+Subsequent updates to the branch can be pushed from the test environment using \texttt{git push origin branchname} and the \texttt{post-receive} hook will continue to handle updates.
+
+To switch back to the master branch on production:
 
 \begin{lstlisting}
-git checkout master
-git merge changes-20140511
-git push
-\end{lstlisting}
-
-Now pull the new \texttt{master} to the production server:
-
-\begin{lstlisting}
-cd /var/www/sites/pub/
+cd /var/www/sites/myproject
 git checkout master
 git pull
+git submodule update
 \end{lstlisting}
-
-Finally, update submodules and check out the proper commit for each:
-
-\begin{lstlisting}
-git pull --recurse-submodules
-git submodule update --recursive
-\end{lstlisting}
-
-The production server is now up-to-date with the changes introduced in the \texttt{changes-} branch.
-
-\subsection{Plan B: Go Live with the Branch}
-
-In some cases, it may be preferable \emph{not} to merge the new branch into \texttt{master} and instead directly deploy the branch on the production server.
-
-This approach can be beneficial in the case of a large version update to a critical system which may have undetected bugs, necessitating a quick rollback to the previous version.  Once the code is found to be stable, it can then be merged into \texttt{master}.
-
-Starting in the test server folder, do a final check for any uncommitted changes:
-
-\begin{lstlisting}
-git status
-\end{lstlisting}
-
-Run \lstinline!git commit! if there are uncommitted changes.
-
-Do a final push to the repo:
-
-\begin{lstlisting}
-git push
-\end{lstlisting}
-
-Switch to the production server folder and pull from the repo:
-
-\begin{lstlisting}
-cd /var/www/sites/pub/
-git pull
-\end{lstlisting}
-
-List the remote branches to ensure the desired branch appears:
-
-\begin{lstlisting}
-git branch -r
-\end{lstlisting}
-
-Check out the branch:
-
-\begin{lstlisting}
-git checkout changes-20140511
-\end{lstlisting}
-
-Finally, update submodules and check out the proper commit for each:
-
-\begin{lstlisting}
-git pull --recurse-submodules
-git submodule update --recursive
-\end{lstlisting}
-
-If a rollback to the previous version is necessary, this can be performed by simply checking out the current \texttt{master}:
-
-\begin{lstlisting}
-git checkout master
-\end{lstlisting}
-
-...along with a corresponding modification to the submodules:
-
-Finally, update submodules and check out the proper commit for each:
-
-\begin{lstlisting}
-git submodule update --recursive
-\end{lstlisting}
-
-Once the code is determined to be stable and a merge to \texttt{master} is desired, see the steps for \nameref{publish-plan-a} on page \pageref{publish-plan-a} to merge the branch to \texttt{master}, push it to the git repo, and roll it out to the production server.
 
 \subsection{Remote Branches}
 
@@ -1621,39 +1587,9 @@ With the \texttt{~/.ssh/id\_wx4akq} key (from \texttt{fujita}) added to your loc
 # Create the project folder and do the clone
 mkdir ~/projects
 git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-pub ~/projects/pub
-
-# Get and link the resources folder
-git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/www-resources ~/projects/resources
-ln -s ~/projects/pub/resources ~/projects/resources
+git submodule init
+git submodule update
 \end{lstlisting}
-
-\subsection{Creating a New Site \& Repo from Scratch}
-
-To create a new web site project from scratch:
-
-Create the repo folder and initialize it:
-
-\begin{lstlisting}
-mkdir ~/git/newsite
-cd ~/git/newsite
-git --bare init
-\end{lstlisting}
-
-Clone the empty repo to the test server:
-
-\begin{lstlisting}
-git clone ssh://wx4akq@fujita.wx4akq.org/home/wx4akq/git/newsite /var/www/sites/test/newsite/
-\end{lstlisting}
-
-(A warning about cloning an empty repository is normal.)
-
-Link to resources if needed:
-
-\begin{lstlisting}
-ln -s /var/www/sites/test/resources /var/www/sites/test/newsite/resources
-\end{lstlisting}
-
-The site is browsable at \texttt{http://test.wx4akq.org/newsite/}.
 
 \subsection{Version Tagging}
 
